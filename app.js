@@ -739,13 +739,12 @@ function renderRajoutSectionHtml(sectionTitle, rows, sectionKey, abbrev) {
 	const rowsHtml = rows
 		.map((row) => {
 			const cells = days.map((d) => (row.rajouts && row.rajouts[d] ? '<td class="rajout-x">X</td>' : '<td></td>')).join('');
-			const badgeLabel = sectionKey === 'simple' ? 'Rajout simple' : (sectionKey === 'new' ? 'Nouveau collaborateur' : 'Rajout');
-			const badgeClass = sectionKey === 'simple' ? 'is-simple-rajout' : (sectionKey === 'new' ? 'is-new-collaborator' : 'is-rajout-other');
+			const badgeLabel = 'Collaborateur';
 			return `
 				<article class="result-card">
 					<div class="rajout-card-row" style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:6px;width:100%;min-width:0;">
 						<div class="rajout-card-info" style="display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-width:150px;max-width:170px;flex:0 0 160px;">
-							<div class="rajout-type-badge ${badgeClass}">${escapeHtml(badgeLabel)}</div>
+							<div class="rajout-type-badge is-collaborator-column" style="background:linear-gradient(135deg,#102a43,#1d4e89);color:#fff;border:1px solid rgba(16,42,67,0.2);box-shadow:0 8px 18px rgba(16,42,67,0.14);">${escapeHtml(badgeLabel)}</div>
 							<div class="rajout-card-name">${escapeHtml(row.nomPrenom)}</div>
 							<div class="rajout-card-meta">${escapeHtml(row.matricule)}</div>
 						</div>

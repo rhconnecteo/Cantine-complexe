@@ -1765,8 +1765,9 @@ tbody tr:nth-child(even) td {
 		flex-wrap: nowrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: 8px;
+		gap: 12px;
 		width: 100%;
+		padding: 2px 0;
 	}
 
 	body.page-rajout-active .rajout-card-info {
@@ -1774,7 +1775,7 @@ tbody tr:nth-child(even) td {
 		flex-direction: column;
 		align-items: flex-start;
 		justify-content: center;
-		gap: 2px;
+		gap: 4px;
 		min-width: 0;
 		flex: 0 0 34%;
 		max-width: 34%;
@@ -1819,8 +1820,9 @@ tbody tr:nth-child(even) td {
 		gap: 12px;
 		padding: 10px 12px;
 		border-radius: 14px;
-		background: rgba(23, 33, 43, 0.04);
-		border: 1px solid rgba(23, 33, 43, 0.08);
+		background: linear-gradient(135deg, rgba(31, 122, 90, 0.08), rgba(255, 255, 255, 0.92));
+		border: 1px solid rgba(31, 122, 90, 0.12);
+		box-shadow: 0 8px 18px rgba(23, 33, 43, 0.05);
 	}
 
 	body.page-rajout-active .rajout-section-header h3 {
@@ -1854,28 +1856,20 @@ tbody tr:nth-child(even) td {
 		align-items: center;
 		justify-content: center;
 		align-self: flex-start;
-		padding: 4px 8px;
+		padding: 4px 9px;
 		border-radius: 999px;
-		font-size: 0.64rem;
+		font-size: 0.62rem;
 		font-weight: 900;
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
 		white-space: nowrap;
+		border: 1px solid rgba(31, 122, 90, 0.12);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 	}
 
-	body.page-rajout-active .rajout-type-badge.is-simple-rajout {
-		background: rgba(217, 119, 6, 0.14);
-		color: #9a5a00;
-	}
-
-	body.page-rajout-active .rajout-type-badge.is-new-collaborator {
+	body.page-rajout-active .rajout-type-badge.is-collaborator-column {
 		background: rgba(31, 122, 90, 0.14);
 		color: var(--accent-strong);
-	}
-
-	body.page-rajout-active .rajout-type-badge.is-rajout-other {
-		background: rgba(23, 33, 43, 0.08);
-		color: var(--muted);
 	}
 
 	body.page-rajout-active .rajout-card-info,
