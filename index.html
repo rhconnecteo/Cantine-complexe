@@ -1245,6 +1245,25 @@ tbody tr:nth-child(even) td {
 }
 
 @media (max-width: 720px) {
+		body.sidebar-collapsed .dashboard-layout {
+			grid-template-columns: 1fr;
+		}
+
+		body.sidebar-collapsed .sidebar {
+			width: auto;
+			padding: 10px;
+		}
+
+		body.sidebar-collapsed .sidebar-toggle {
+			display: none;
+		}
+
+		body.sidebar-collapsed .sidebar-title,
+		body.sidebar-collapsed .sidebar-metric,
+		body.sidebar-collapsed .sidebar-button-label {
+			display: block;
+		}
+
 	.page-shell {
 		padding: 10px;
 	}
@@ -1642,15 +1661,15 @@ tbody tr:nth-child(even) td {
 	/* Mobile: make rajout name & matricule smaller and compact the table */
 	.result-card .rajout-card-info,
 	.rajout-card-info {
-		flex: 0 0 66px !important;
-		max-width: 66px !important;
+		flex: 0 0 56px !important;
+		max-width: 56px !important;
 		min-width: 0 !important;
 	}
 
 	.result-card .rajout-card-name,
 	.rajout-card-name,
 	.rajout-name {
-		font-size: 0.48rem !important;
+		font-size: 0.42rem !important;
 		font-weight: 800 !important;
 		white-space: normal !important;
 		line-height: 1 !important;
@@ -1665,19 +1684,19 @@ tbody tr:nth-child(even) td {
 	.result-card .rajout-card-meta,
 	.rajout-card-meta,
 	.rajout-matricule {
-		font-size: 0.42rem !important;
+		font-size: 0.36rem !important;
 		white-space: normal !important;
 		color: var(--muted) !important;
 	}
 
 	.rajout-card-table {
-		max-width: calc(100vw - 74px) !important;
+		max-width: calc(100vw - 64px) !important;
 	}
 
 	.rajout-table,
 	.rajout-table th,
 	.rajout-table td {
-		font-size: 0.54rem !important;
+		font-size: 0.48rem !important;
 		padding: 1px !important;
 	}
 
@@ -1746,12 +1765,12 @@ tbody tr:nth-child(even) td {
 		justify-content: center;
 		gap: 2px;
 		min-width: 0;
-		flex: 0 0 20% !important;
-		max-width: 20% !important;
+		flex: 0 0 16% !important;
+		max-width: 16% !important;
 	}
 
 	body.page-rajout-active .rajout-card-name {
-		font-size: 0.46rem;
+		font-size: 0.4rem;
 		font-weight: 800;
 		line-height: 1;
 		color: var(--text);
@@ -1764,7 +1783,7 @@ tbody tr:nth-child(even) td {
 	}
 
 	body.page-rajout-active .rajout-card-meta {
-		font-size: 0.42rem;
+		font-size: 0.36rem;
 		font-weight: 700;
 		color: var(--muted);
 		white-space: nowrap;
@@ -1775,20 +1794,20 @@ tbody tr:nth-child(even) td {
 	body.page-rajout-active .rajout-card-table {
 		flex: 1 1 auto;
 		margin-left: auto;
-		max-width: calc(100vw - 72px);
+		max-width: calc(100vw - 58px);
 		overflow: hidden;
 	}
 
 	body.page-rajout-active .rajout-type-badge {
-		font-size: 0.5rem;
-		padding: 3px 6px;
+		font-size: 0.42rem;
+		padding: 2px 5px;
 		line-height: 1;
 	}
 
 	body.page-rajout-active .rajout-day-th,
 	body.page-rajout-active .rajout-x {
 		padding: 0 1px;
-		font-size: 0.4rem;
+		font-size: 0.36rem;
 		line-height: 1;
 	}
 

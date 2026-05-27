@@ -89,6 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	elements.rajoutList = document.getElementById('rajoutList');
 
 	state.sidebarCollapsed = readSidebarCollapsedState();
+	if (isMobileViewport()) {
+		state.sidebarCollapsed = false;
+	}
 	applySidebarCollapsedState(state.sidebarCollapsed);
 
 		// Page-aware initialisation: only run features present on the current page
@@ -266,7 +269,14 @@ function applySidebarCollapsedState(isCollapsed) {
 }
 
 function toggleSidebarCollapsed() {
+	if (isMobileViewport()) {
+		return;
+	}
 	applySidebarCollapsedState(!state.sidebarCollapsed);
+}
+
+function isMobileViewport() {
+	return window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
 }
 
 function showSection(pageId) {
@@ -741,7 +751,7 @@ function renderRajoutSectionHtml(sectionTitle, rows, sectionKey, abbrev) {
 			return `
 				<article class="result-card">
 					<div class="rajout-card-row" style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:6px;width:100%;min-width:0;">
-						<div class="rajout-card-info" style="display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-width:150px;max-width:170px;flex:0 0 160px;">
+						<div class="rajout-card-info" style="display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-width:0;max-width:120px;flex:0 0 120px;">
 							<div class="rajout-type-badge is-collaborator-column" style="background:linear-gradient(135deg,#102a43,#1d4e89);color:#fff;border:1px solid rgba(16,42,67,0.2);box-shadow:0 8px 18px rgba(16,42,67,0.14);">${escapeHtml(badgeLabel)}</div>
 							<div class="rajout-card-name">${escapeHtml(row.nomPrenom)}</div>
 							<div class="rajout-card-meta">${escapeHtml(row.matricule)}</div>
