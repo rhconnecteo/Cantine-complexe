@@ -1,4 +1,4 @@
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxD66znAFJRukZloI15T7nxjf3OetC6yBYE41qtXKzlu8943cw9tbH7wCYmtdg4SGGy/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxivqsV--1oNYn7xITAonG-EdtaAmjurkC8IA87K1vt30nUngA9eix_pm3Qh0au7o6O/exec';
 const DAY_OPTIONS = [
 	{ key: 'lundi', label: 'Lundi' },
 	{ key: 'mardi', label: 'Mardi' },
@@ -36,6 +36,7 @@ const state = {
 	days: DAY_OPTIONS,
 	lastResults: [],
 	selectedRajoutDays: [],
+	selectedCollaboratorDays: [],
 	currentSearchMatricule: '',
 	formulaireSearchMatricule: '',
 	searchPeriodMode: 'all',
@@ -61,6 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	elements.collaboratorForm = document.getElementById('collaboratorForm');
 	elements.collaboratorMatriculeInput = document.getElementById('collaboratorMatriculeInput');
 	elements.collaboratorNameInput = document.getElementById('collaboratorNameInput');
+	elements.collaboratorDayButtons = document.getElementById('collaboratorDayButtons');
+	elements.collaboratorDays = document.getElementById('collaboratorDays');
 	elements.collaboratorStatus = document.getElementById('collaboratorStatus');
 	elements.searchPeriodMode = document.getElementById('searchPeriodMode');
 	elements.resetButton = document.getElementById('resetButton');
@@ -95,6 +98,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (elements.rajoutJour) {
 			renderRajoutDayOptions();
 			setDefaultRajoutJour();
+		}
+		if (elements.collaboratorDayButtons) {
+			renderCollaboratorDayOptions();
+			setDefaultCollaboratorDays();
 		}
 		bindEvents();
 		adjustSidebarRajoutVisibility();
@@ -574,10 +581,18 @@ function onCollaboratorSubmit(event) {
 
 	const matricule = String(elements.collaboratorMatriculeInput && elements.collaboratorMatriculeInput.value || '').trim();
 	const nomPrenom = String(elements.collaboratorNameInput && elements.collaboratorNameInput.value || '').trim();
+	const jours = Array.isArray(state.selectedCollaboratorDays) ? state.selectedCollaboratorDays.filter(Boolean) : [];
 
 	if (!matricule || !nomPrenom) {
 		if (elements.collaboratorStatus) {
 			elements.collaboratorStatus.textContent = 'Le matricule et le nom sont obligatoires.';
+		}
+		return;
+	}
+
+	if (!jours.length) {
+		if (elements.collaboratorStatus) {
+			elements.collaboratorStatus.textContent = 'Sélectionnez au moins un jour de repas.';
 		}
 		return;
 	}
@@ -590,6 +605,7 @@ function onCollaboratorSubmit(event) {
 		action: 'addCollaborator',
 		matricule,
 		nomPrenom,
+		jours: jours.join(','),
 	});
 
 	loadJsonp(`${WEB_APP_URL}?${params.toString()}`, 15000)
@@ -605,6 +621,7 @@ function onCollaboratorSubmit(event) {
 			if (elements.collaboratorForm) {
 				elements.collaboratorForm.reset();
 			}
+			setDefaultCollaboratorDays();
 
 			state.formulaireSearchMatricule = normalizeText(matricule);
 			if (elements.formulaireMatriculeInput) {
@@ -700,16 +717,35 @@ function renderRajoutList() {
 
 	// Sort by matricule for predictability
 	rowsWithRajout.sort((a, b) => (a.matricule || '').localeCompare(b.matricule || ''));
+	const simpleRows = rowsWithRajout.filter((row) => row.isSimpleRajout && !row.isAddedCollaborator);
+	const newCollaboratorRows = rowsWithRajout.filter((row) => row.isAddedCollaborator);
+	const otherRows = rowsWithRajout.filter((row) => !row.isSimpleRajout && !row.isAddedCollaborator);
 
-	elements.rajoutList.innerHTML = rowsWithRajout
+	elements.rajoutList.innerHTML = [
+		renderRajoutSectionHtml('Rajout simple', simpleRows, 'simple', abbrev),
+		renderRajoutSectionHtml('Nouveau collaborateur', newCollaboratorRows, 'new', abbrev),
+		renderRajoutSectionHtml('Autres rajouts', otherRows, 'other', abbrev),
+	].filter(Boolean).join('');
+	if (elements.resultsHint) elements.resultsHint.textContent = '';
+	if (elements.searchResults) elements.searchResults.innerHTML = '';
+}
+
+function renderRajoutSectionHtml(sectionTitle, rows, sectionKey, abbrev) {
+	if (!Array.isArray(rows) || !rows.length) {
+		return '';
+	}
+
+	const days = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+	const rowsHtml = rows
 		.map((row) => {
-			const days = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
-			// build a small inline table showing X for rajout days
 			const cells = days.map((d) => (row.rajouts && row.rajouts[d] ? '<td class="rajout-x">X</td>' : '<td></td>')).join('');
+			const badgeLabel = sectionKey === 'simple' ? 'Rajout simple' : (sectionKey === 'new' ? 'Nouveau collaborateur' : 'Rajout');
+			const badgeClass = sectionKey === 'simple' ? 'is-simple-rajout' : (sectionKey === 'new' ? 'is-new-collaborator' : 'is-rajout-other');
 			return `
 				<article class="result-card">
 					<div class="rajout-card-row" style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:6px;width:100%;min-width:0;">
 						<div class="rajout-card-info" style="display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-width:150px;max-width:170px;flex:0 0 160px;">
+							<div class="rajout-type-badge ${badgeClass}">${escapeHtml(badgeLabel)}</div>
 							<div class="rajout-card-name">${escapeHtml(row.nomPrenom)}</div>
 							<div class="rajout-card-meta">${escapeHtml(row.matricule)}</div>
 						</div>
@@ -731,9 +767,19 @@ function renderRajoutList() {
 				</article>
 			`;
 		})
-		.join('');
-	if (elements.resultsHint) elements.resultsHint.textContent = '';
-	if (elements.searchResults) elements.searchResults.innerHTML = '';
+			.join('');
+
+		return `
+			<section class="rajout-section-group rajout-section-group--${escapeHtml(sectionKey)}">
+				<div class="rajout-section-header">
+					<h3>${escapeHtml(sectionTitle)}</h3>
+					<span>${rows.length}</span>
+				</div>
+				<div class="results-list rajout-list-group">
+					${rowsHtml}
+				</div>
+			</section>
+		`;
 }
 
 function renderRajoutListHtml() {
@@ -742,39 +788,18 @@ function renderRajoutListHtml() {
 		return '<div class="results-list empty-state">Aucun rajout enregistre.</div>';
 	}
 
-	const abbrev = { lundi: 'Lun', mardi: 'Mar', mercredi: 'Mer', jeudi: 'Jeu', vendredi: 'Ven', samedi: 'Sam', dimanche: 'Dim' };
+		const abbrev = { lundi: 'Lun', mardi: 'Mar', mercredi: 'Mer', jeudi: 'Jeu', vendredi: 'Ven', samedi: 'Sam', dimanche: 'Dim' };
 	rowsWithRajout.sort((a, b) => (a.matricule || '').localeCompare(b.matricule || ''));
 
-	return rowsWithRajout
-		.map((row) => {
-			const days = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
-			const cells = days.map((d) => (row.rajouts && row.rajouts[d] ? '<td style="text-align:center;font-weight:800;color:var(--accent-strong)">X</td>' : '<td></td>')).join('');
-			return `
-				<article class="result-card">
-					<div class="rajout-card-row" style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:6px;width:100%;min-width:0;">
-						<div class="rajout-card-info" style="display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-width:150px;max-width:170px;flex:0 0 160px;">
-							<div class="rajout-card-name">${escapeHtml(row.nomPrenom)}</div>
-							<div class="rajout-card-meta">${escapeHtml(row.matricule)}</div>
-						</div>
-						<div class="rajout-card-table" style="flex:1 1 auto;min-width:0;margin-left:0;white-space:nowrap;overflow:hidden;max-width:100%;">
-								<table class="rajout-table" style="border-collapse:collapse;white-space:nowrap;width:100%;table-layout:fixed;">
-								<thead>
-									<tr>
-										${days.map((d) => `<th class="rajout-day-th">${escapeHtml(abbrev[d])}</th>`).join('')}
-									</tr>
-								</thead>
-								<tbody>
-									<tr>
-										${cells}
-									</tr>
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</article>
-			`;
-		})
-		.join('');
+		const simpleRows = rowsWithRajout.filter((row) => row.isSimpleRajout && !row.isAddedCollaborator);
+		const newCollaboratorRows = rowsWithRajout.filter((row) => row.isAddedCollaborator);
+		const otherRows = rowsWithRajout.filter((row) => !row.isSimpleRajout && !row.isAddedCollaborator);
+
+		return [
+			renderRajoutSectionHtml('Rajout simple', simpleRows, 'simple', abbrev),
+			renderRajoutSectionHtml('Nouveau collaborateur', newCollaboratorRows, 'new', abbrev),
+			renderRajoutSectionHtml('Autres rajouts', otherRows, 'other', abbrev),
+		].filter(Boolean).join('');
 }
 
 function openRajoutMainView() {
@@ -1077,6 +1102,19 @@ function renderRajoutDayOptions() {
 	});
 }
 
+function renderCollaboratorDayOptions() {
+	if (!elements.collaboratorDayButtons || !elements.collaboratorDays) return;
+	elements.collaboratorDayButtons.innerHTML = DAY_OPTIONS.map(
+		(day) => `<button type="button" class="rajout-day-button collaborator-day-button" data-day="${day.key}">${day.label}</button>`,
+	).join('');
+
+	elements.collaboratorDayButtons.querySelectorAll('.collaborator-day-button').forEach((button) => {
+		button.addEventListener('click', () => {
+			toggleCollaboratorDay(button.getAttribute('data-day') || '');
+		});
+	});
+}
+
 function setRajoutDays(dayKeys) {
 	if (!elements.rajoutJour) return;
 	state.selectedRajoutDays = Array.isArray(dayKeys) ? dayKeys.filter(Boolean) : [];
@@ -1086,6 +1124,33 @@ function setRajoutDays(dayKeys) {
 		const isSelected = state.selectedRajoutDays.includes(button.getAttribute('data-day'));
 		button.classList.toggle('is-selected', isSelected);
 	});
+}
+
+function setCollaboratorDays(dayKeys) {
+	if (!elements.collaboratorDays) return;
+	state.selectedCollaboratorDays = Array.isArray(dayKeys) ? dayKeys.filter(Boolean) : [];
+	elements.collaboratorDays.value = state.selectedCollaboratorDays.join(',');
+	if (!elements.collaboratorDayButtons) return;
+	elements.collaboratorDayButtons.querySelectorAll('.collaborator-day-button').forEach((button) => {
+		const isSelected = state.selectedCollaboratorDays.includes(button.getAttribute('data-day'));
+		button.classList.toggle('is-selected', isSelected);
+	});
+}
+
+function toggleCollaboratorDay(dayKey) {
+	if (!dayKey) return;
+	const current = Array.isArray(state.selectedCollaboratorDays) ? [...state.selectedCollaboratorDays] : [];
+	const index = current.indexOf(dayKey);
+	if (index >= 0) {
+		current.splice(index, 1);
+	} else {
+		current.push(dayKey);
+	}
+	setCollaboratorDays(current);
+}
+
+function setDefaultCollaboratorDays() {
+	setCollaboratorDays(DAY_OPTIONS.map((day) => day.key));
 }
 
 function toggleRajoutDay(dayKey) {
@@ -1403,14 +1468,14 @@ function createSlideshow(containerId, slidesArray, intervalMs = 3600) {
 	if (!frame || !Array.isArray(slidesArray) || slidesArray.length === 0) return null;
 
 	frame.innerHTML = slidesArray
-		.slice(0, 1)
-		.map((slide) => `
+		.map((slide, index) => `
 			<img
-				class="hero-slide is-active"
+				class="hero-slide${index === 0 ? ' is-active' : ''}"
 				src="${escapeHtml(slide.src)}"
 				alt="${escapeHtml(slide.alt)}"
-				loading="eager"
+				loading="${index === 0 ? 'eager' : 'lazy'}"
 				decoding="async"
+				aria-hidden="${index === 0 ? 'false' : 'true'}"
 			/>
 		`)
 		.join('');
@@ -1422,15 +1487,29 @@ function createSlideshow(containerId, slidesArray, intervalMs = 3600) {
 		timer: null,
 		intervalMs,
 	};
+
+	if (slideshow.slides.length > 1) {
+		slideshow.timer = window.setInterval(() => {
+			slideshow.index = (slideshow.index + 1) % slideshow.slides.length;
+			slideshow.slides.forEach((slide, slideIndex) => {
+				const isActive = slideIndex === slideshow.index;
+				slide.classList.toggle('is-active', isActive);
+				slide.setAttribute('aria-hidden', String(!isActive));
+			});
+		}, intervalMs);
+	}
+
 	return slideshow;
 }
 
 function initializeHeroSlideshow() {
-	// create static hero frames with one image each to avoid continuous animation cost
 	state.heroSlides = {};
 	state.heroSlides.left = createSlideshow('slideshow-left', HERO_SLIDES_LEFT, 3800);
 	state.heroSlides.center = createSlideshow('slideshow-center', HERO_SLIDES_RIZ, 4200);
 	state.heroSlides.right = createSlideshow('slideshow-right', HERO_SLIDES_DESSERTS, 3600);
+	state.heroSlides.rajoutLeft = createSlideshow('rajout-slideshow-left', HERO_SLIDES_LEFT, 3800);
+	state.heroSlides.rajoutCenter = createSlideshow('rajout-slideshow-center', HERO_SLIDES_RIZ, 4200);
+	state.heroSlides.rajoutRight = createSlideshow('rajout-slideshow-right', HERO_SLIDES_DESSERTS, 3600);
 }
 
 function setHeroSlideshowPlaying(shouldPlay) {

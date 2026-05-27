@@ -328,8 +328,14 @@ h1 {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
-	opacity: 1;
+	opacity: 0;
 	transform: none;
+	transition: opacity 0.55s ease;
+}
+
+.hero-slide.is-active {
+	opacity: 1;
+	z-index: 1;
 }
 
 .hero-visual-frame::before {
@@ -438,12 +444,26 @@ h1 {
 	display: none;
 }
 
+	.hero-rajout-zone .hero-columns,
+	#rajoutHeroZone .hero-columns {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(220px, 1fr));
+		gap: 12px;
+	}
+
 body.page-rajout-active .hero-visual-shell {
 	display: none;
 }
 
 body.page-rajout-active .hero-visual {
 	display: none;
+}
+
+body.page-rajout-active #page-rajout .hero-visual,
+body.page-rajout-active #page-rajout .hero-visual-shell,
+body.page-rajout-active #rajoutHeroZone .hero-visual,
+body.page-rajout-active #rajoutHeroZone .hero-visual-shell {
+	display: block;
 }
 
 body.page-rajout-active .hero-rajout-zone {
@@ -1786,6 +1806,78 @@ tbody tr:nth-child(even) td {
 		overflow: hidden;
 	}
 
+	body.page-rajout-active .rajout-section-group {
+		display: grid;
+		gap: 8px;
+		margin-bottom: 14px;
+	}
+
+	body.page-rajout-active .rajout-section-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 10px 12px;
+		border-radius: 14px;
+		background: rgba(23, 33, 43, 0.04);
+		border: 1px solid rgba(23, 33, 43, 0.08);
+	}
+
+	body.page-rajout-active .rajout-section-header h3 {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--accent-strong);
+	}
+
+	body.page-rajout-active .rajout-section-header span {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 28px;
+		padding: 4px 8px;
+		border-radius: 999px;
+		background: var(--accent-soft);
+		color: var(--accent-strong);
+		font-size: 0.72rem;
+		font-weight: 900;
+	}
+
+	body.page-rajout-active .rajout-list-group {
+		gap: 8px;
+	}
+
+	body.page-rajout-active .rajout-type-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		align-self: flex-start;
+		padding: 4px 8px;
+		border-radius: 999px;
+		font-size: 0.64rem;
+		font-weight: 900;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+
+	body.page-rajout-active .rajout-type-badge.is-simple-rajout {
+		background: rgba(217, 119, 6, 0.14);
+		color: #9a5a00;
+	}
+
+	body.page-rajout-active .rajout-type-badge.is-new-collaborator {
+		background: rgba(31, 122, 90, 0.14);
+		color: var(--accent-strong);
+	}
+
+	body.page-rajout-active .rajout-type-badge.is-rajout-other {
+		background: rgba(23, 33, 43, 0.08);
+		color: var(--muted);
+	}
+
 	body.page-rajout-active .rajout-card-info,
 	body.page-rajout-active .rajout-card-table {
 		min-width: 0;
@@ -1940,6 +2032,11 @@ tbody tr:nth-child(even) td {
 									<span>Nom et prénom</span>
 									<input id="collaboratorNameInput" type="text" placeholder="Nom complet" />
 								</div>
+								<div class="field rajout-days-block" style="grid-column:1/-1;">
+									<span>Jours de repas</span>
+									<input id="collaboratorDays" type="hidden" />
+									<div id="collaboratorDayButtons" class="rajout-day-group collaborator-day-group"></div>
+								</div>
 								<div class="actions">
 									<button type="submit" class="primary-button">Ajouter</button>
 								</div>
@@ -1994,6 +2091,34 @@ tbody tr:nth-child(even) td {
 					</section>
 
 					<section id="page-rajout" class="panel app-card rajout-panel page-section">
+						<div id="rajoutHeroZone" class="hero-rajout-zone" style="margin-bottom:12px;">
+							<div class="hero-columns">
+								<div class="hero-column">
+									<h3 class="hero-column-title"></h3>
+									<figure class="hero-visual">
+										<div class="hero-visual-frame">
+											<div id="rajout-slideshow-left" class="hero-slideshow" aria-label="Images slideshow rajout"></div>
+										</div>
+									</figure>
+								</div>
+								<div class="hero-column">
+									<h3 class="hero-column-title"></h3>
+									<figure class="hero-visual">
+										<div class="hero-visual-frame">
+											<div id="rajout-slideshow-center" class="hero-slideshow" aria-label="Riz slideshow rajout"></div>
+										</div>
+									</figure>
+								</div>
+								<div class="hero-column">
+									<h3 class="hero-column-title"></h3>
+									<figure class="hero-visual">
+										<div class="hero-visual-frame">
+											<div id="rajout-slideshow-right" class="hero-slideshow" aria-label="Desserts slideshow rajout"></div>
+										</div>
+									</figure>
+								</div>
+							</div>
+						</div>
 						<div id="rajoutStatus" style="margin-top:8px;color:var(--muted)"></div>
 						<div id="rajoutList" class="results-list rajout-list-only" style="margin-top:12px"></div>
 					</section>
