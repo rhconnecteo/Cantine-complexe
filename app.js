@@ -737,7 +737,7 @@ function renderRajoutSectionHtml(sectionTitle, rows, sectionKey, abbrev) {
 	const rowsHtml = rows
 		.map((row) => {
 			const cells = days.map((d) => (row.rajouts && row.rajouts[d] ? '<td class="rajout-x">X</td>' : '<td></td>')).join('');
-			const badgeLabel = 'Collaborateur';
+			const badgeLabel = 'Collab';
 			return `
 				<article class="result-card">
 					<div class="rajout-card-row" style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:6px;width:100%;min-width:0;">
