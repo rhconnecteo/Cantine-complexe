@@ -98,10 +98,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 		bindEvents();
 		adjustSidebarRajoutVisibility();
-		showSection('page-formulaire');
-		setActiveNav(elements.navFormulaireButton);
-		// ensure the rajout form is positioned into the formulaire area by default
-		positionRajoutForm('page-formulaire');
+		showSection('page-recherche');
+		setActiveNav(elements.navRechercheButton);
+		// ensure the rajout form is positioned into the search sidebar by default
+		positionRajoutForm('page-recherche');
 		initializeHeroSlideshow();
 		loadData();
 });
@@ -276,7 +276,7 @@ function showSection(pageId) {
 		document.body.classList.add('page-rajout-active');
 		adjustRajoutSectionVisibility('page-rajout');
 		positionRajoutForm('page-rajout');
-		setHeroSlideshowPlaying(true);
+		setHeroSlideshowPlaying(false);
 		renderRajoutList();
 		adjustSidebarRajoutVisibility('page-rajout');
 	} else if (pageId === 'page-recherche') {
@@ -682,17 +682,6 @@ function setActiveNav(button) {
 
 function renderRajoutList() {
 	if (!elements.rajoutList) return;
-	// If rows are not yet loaded, show a loading state and attempt to refresh
-	if (!Array.isArray(state.rows) || state.rows.length === 0) {
-		elements.rajoutList.innerHTML = '<div class="results-list empty-state">Chargement des rajouts...</div>';
-		// attempt to fetch data then re-render
-		loadData().then(() => {
-			renderRajoutList();
-		}).catch(() => {
-			// leave the loading state; loadData will show errors elsewhere
-		});
-		return;
-	}
 	const rowsWithRajout = (state.rows || []).filter((r) => r.rajouts && Object.keys(r.rajouts).length > 0);
 	if (!rowsWithRajout.length) {
 		elements.rajoutList.innerHTML = '<div class="results-list empty-state">Aucun rajout enregistre.</div>';
@@ -1262,7 +1251,7 @@ function renderResults(rows, emptyMessage, isEmpty, mode, targetElement) {
 								<div class="week-column ${dayIsRajout ? 'is-rajout' : (ready ? 'is-ready' : 'is-missing')} ${checked ? 'is-checked' : ''}">
 									<h4>${escapeHtml(isCompact ? (abbrev[day.key] || day.label) : day.label)}</h4>
 									${renderWeekdayCell('Planning', dayData.planning, 'Pas de planning')}
-									${renderWeekdayCell('Shift', dayData.period, 'Jour / Nuit')}
+									${renderWeekdayCell('Période', dayData.period, 'Jour / Nuit')}
 									${renderWeekdayCell('Choix', dayData.choice, 'Pas de choix')}
 									<div class="day-status ${(dayIsRajout ? 'is-rajout' : (ready ? 'is-ready' : 'is-missing'))} ${checked ? 'is-checked' : ''}">${checked ? 'Repas pris' : (dayIsRajout ? 'Rajouté' : (ready ? 'Compatible' : 'Incomplet'))}</div>
 								</div>
@@ -1342,7 +1331,7 @@ function renderFormulaireResults(rows, emptyMessage, isEmpty, dayKey) {
 									<strong>${escapeHtml(row.matricule)}</strong>
 								</div>
 								<div class="formulaire-result-item">
-									<span>Shift :</span>
+									<span>Période :</span>
 									<strong>${escapeHtml(dayData.period || 'Jour / Nuit')}</strong>
 								</div>
 								<div class="formulaire-result-item">
@@ -1412,46 +1401,26 @@ function renderMealAction(row, dayKey, dayData, isChecked) {
 function createSlideshow(containerId, slidesArray, intervalMs = 3600) {
 	const frame = document.getElementById(containerId);
 	if (!frame || !Array.isArray(slidesArray) || slidesArray.length === 0) return null;
-	// create an image element for each slide
+
 	frame.innerHTML = slidesArray
-		.map((slide, i) => `
+		.slice(0, 1)
+		.map((slide) => `
 			<img
-				class="hero-slide ${i === 0 ? 'is-active' : ''}"
+				class="hero-slide is-active"
 				src="${escapeHtml(slide.src)}"
 				alt="${escapeHtml(slide.alt)}"
 				loading="eager"
 				decoding="async"
-				data-index="${i}"
 			/>
 		`)
 		.join('');
 
-	const slides = Array.from(frame.querySelectorAll('.hero-slide'));
 	const slideshow = {
 		frame,
-		slides,
+		slides: Array.from(frame.querySelectorAll('.hero-slide')),
 		index: 0,
 		timer: null,
 		intervalMs,
-		start() {
-			if (!this.slides || this.slides.length < 2) return;
-			this.stop();
-			this.timer = setInterval(() => {
-				this.slides[this.index].classList.remove('is-active');
-				this.index = (this.index + 1) % this.slides.length;
-				this.slides[this.index].classList.add('is-active');
-			}, this.intervalMs);
-		},
-		stop() {
-			if (this.timer) {
-				clearInterval(this.timer);
-				this.timer = null;
-			}
-		},
-		destroy() {
-			this.stop();
-			this.frame.innerHTML = '';
-		}
 	};
 	return slideshow;
 }
@@ -1462,45 +1431,10 @@ function initializeHeroSlideshow() {
 	state.heroSlides.left = createSlideshow('slideshow-left', HERO_SLIDES_LEFT, 3800);
 	state.heroSlides.center = createSlideshow('slideshow-center', HERO_SLIDES_RIZ, 4200);
 	state.heroSlides.right = createSlideshow('slideshow-right', HERO_SLIDES_DESSERTS, 3600);
-	// rajout page slides (separate containers shown only on rajout page)
-	state.heroSlides.rajoutLeft = createSlideshow('rajout-slideshow-left', HERO_SLIDES_LEFT, 3800);
-	state.heroSlides.rajoutCenter = createSlideshow('rajout-slideshow-center', HERO_SLIDES_RIZ, 4200);
-	state.heroSlides.rajoutRight = createSlideshow('rajout-slideshow-right', HERO_SLIDES_DESSERTS, 3600);
-	// fallback: if slides not visible (CSS/DOM issues), set the first image as background on the frame
-	try {
-		const ensureBackground = (containerId, slidesArray) => {
-			const container = document.getElementById(containerId);
-			if (!container) return;
-			const hasImg = container.querySelector('img');
-			if (hasImg) return;
-			const frame = container.closest('.hero-visual-frame') || container.parentElement;
-			const first = (Array.isArray(slidesArray) && slidesArray[0]) ? slidesArray[0].src : '';
-			if (frame && first) {
-				frame.style.backgroundImage = `url('${first.replace(/'/g, "\\'")}')`;
-				frame.style.backgroundSize = 'cover';
-				frame.style.backgroundPosition = 'center';
-			}
-		};
-		ensureBackground('rajout-slideshow-left', HERO_SLIDES_LEFT);
-		ensureBackground('rajout-slideshow-center', HERO_SLIDES_RIZ);
-		ensureBackground('rajout-slideshow-right', HERO_SLIDES_DESSERTS);
-	} catch (e) {
-		console.warn('rajout slideshow fallback failed', e);
-	}
 }
 
 function setHeroSlideshowPlaying(shouldPlay) {
-	try {
-		if (!state.heroSlides) return Boolean(shouldPlay);
-		Object.values(state.heroSlides).forEach((ss) => {
-			if (!ss) return;
-			if (shouldPlay) ss.start && ss.start();
-			else ss.stop && ss.stop();
-		});
-	} catch (err) {
-		console.warn('setHeroSlideshowPlaying error', err);
-	}
-	return Boolean(shouldPlay);
+	return shouldPlay;
 }
 
 function resetSearch() {
