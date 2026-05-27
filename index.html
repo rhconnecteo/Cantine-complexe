@@ -438,42 +438,6 @@ h1 {
 	animation-delay: 1.2s;
 }
 
-.hero-rajout-zone,
-#rajoutHeroZone {
-	grid-column: 2;
-	display: none;
-}
-
-	.hero-rajout-zone .hero-columns,
-	#rajoutHeroZone .hero-columns {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(220px, 1fr));
-		gap: 12px;
-	}
-
-body.page-rajout-active .hero-visual-shell {
-	display: none;
-}
-
-body.page-rajout-active .hero-visual {
-	display: none;
-}
-
-body.page-rajout-active #page-rajout .hero-visual,
-body.page-rajout-active #page-rajout .hero-visual-shell,
-body.page-rajout-active #rajoutHeroZone .hero-visual,
-body.page-rajout-active #rajoutHeroZone .hero-visual-shell {
-	display: block;
-}
-
-body.page-rajout-active .hero-rajout-zone {
-	display: block;
-}
-
-body.page-rajout-active #rajoutHeroZone {
-	display: block;
-}
-
 .hero-link-row {
 	display: flex;
 	align-items: center;
@@ -2085,34 +2049,6 @@ tbody tr:nth-child(even) td {
 					</section>
 
 					<section id="page-rajout" class="panel app-card rajout-panel page-section">
-						<div id="rajoutHeroZone" class="hero-rajout-zone" style="margin-bottom:12px;">
-							<div class="hero-columns">
-								<div class="hero-column">
-									<h3 class="hero-column-title"></h3>
-									<figure class="hero-visual">
-										<div class="hero-visual-frame">
-											<div id="rajout-slideshow-left" class="hero-slideshow" aria-label="Images slideshow rajout"></div>
-										</div>
-									</figure>
-								</div>
-								<div class="hero-column">
-									<h3 class="hero-column-title"></h3>
-									<figure class="hero-visual">
-										<div class="hero-visual-frame">
-											<div id="rajout-slideshow-center" class="hero-slideshow" aria-label="Riz slideshow rajout"></div>
-										</div>
-									</figure>
-								</div>
-								<div class="hero-column">
-									<h3 class="hero-column-title"></h3>
-									<figure class="hero-visual">
-										<div class="hero-visual-frame">
-											<div id="rajout-slideshow-right" class="hero-slideshow" aria-label="Desserts slideshow rajout"></div>
-										</div>
-									</figure>
-								</div>
-							</div>
-						</div>
 						<div id="rajoutStatus" style="margin-top:8px;color:var(--muted)"></div>
 						<div id="rajoutList" class="results-list rajout-list-only" style="margin-top:12px"></div>
 					</section>

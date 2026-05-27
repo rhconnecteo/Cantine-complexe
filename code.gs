@@ -445,7 +445,6 @@ function addCollaboratorRow(params) {
 	const matricule = String(params.matricule || '').trim();
 	const nomPrenom = String(params.nomPrenom || params.nom || '').trim();
 	const selectedDays = normalizeDayList_(params.jours || params.jour || params.day || params.dayKey || '');
-	const rajoutDays = selectedDays.length ? selectedDays : DAY_CONFIG.map((day) => day.key);
 
 	if (!matricule) {
 		throw new Error('Matricule obligatoire.');
@@ -453,6 +452,10 @@ function addCollaboratorRow(params) {
 
 	if (!nomPrenom) {
 		throw new Error('Nom et prénom obligatoires.');
+	}
+
+	if (!selectedDays.length) {
+		throw new Error('Au moins un jour doit être sélectionné.');
 	}
 
 	const lock = LockService.getScriptLock();
@@ -474,7 +477,7 @@ function addCollaboratorRow(params) {
 		rowValues[0] = matricule;
 		rowValues[1] = nomPrenom;
 		rowValues[NEW_COLLABORATOR_INDEX] = 'X';
-		rajoutDays.forEach((dayKey) => {
+		selectedDays.forEach((dayKey) => {
 			const dayConfig = DAY_CONFIG.find((day) => day.key === dayKey);
 			if (dayConfig) {
 				rowValues[dayConfig.rajoutIndex] = 'X';
@@ -488,7 +491,7 @@ function addCollaboratorRow(params) {
 			matricule,
 			nomPrenom,
 			isAddedCollaborator: true,
-			jours: rajoutDays,
+			jours: selectedDays,
 		};
 	} finally {
 		lock.releaseLock();

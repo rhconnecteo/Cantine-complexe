@@ -1,4 +1,4 @@
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxivqsV--1oNYn7xITAonG-EdtaAmjurkC8IA87K1vt30nUngA9eix_pm3Qh0au7o6O/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwf9MmWDLHzskc6FqVXJ5sGkcgb18Cc8eGaqa6-Z2OYO-1NMtqzW5PZCmGMJFHIVG55/exec';
 const DAY_OPTIONS = [
 	{ key: 'lundi', label: 'Lundi' },
 	{ key: 'mardi', label: 'Mardi' },
@@ -719,12 +719,10 @@ function renderRajoutList() {
 	rowsWithRajout.sort((a, b) => (a.matricule || '').localeCompare(b.matricule || ''));
 	const simpleRows = rowsWithRajout.filter((row) => row.isSimpleRajout && !row.isAddedCollaborator);
 	const newCollaboratorRows = rowsWithRajout.filter((row) => row.isAddedCollaborator);
-	const otherRows = rowsWithRajout.filter((row) => !row.isSimpleRajout && !row.isAddedCollaborator);
 
 	elements.rajoutList.innerHTML = [
 		renderRajoutSectionHtml('Rajout simple', simpleRows, 'simple', abbrev),
-		renderRajoutSectionHtml('Nouveau collaborateur', newCollaboratorRows, 'new', abbrev),
-		renderRajoutSectionHtml('Autres rajouts', otherRows, 'other', abbrev),
+		renderRajoutSectionHtml('Rajout comme nouveau collaborateur', newCollaboratorRows, 'new', abbrev),
 	].filter(Boolean).join('');
 	if (elements.resultsHint) elements.resultsHint.textContent = '';
 	if (elements.searchResults) elements.searchResults.innerHTML = '';
@@ -792,12 +790,10 @@ function renderRajoutListHtml() {
 
 		const simpleRows = rowsWithRajout.filter((row) => row.isSimpleRajout && !row.isAddedCollaborator);
 		const newCollaboratorRows = rowsWithRajout.filter((row) => row.isAddedCollaborator);
-		const otherRows = rowsWithRajout.filter((row) => !row.isSimpleRajout && !row.isAddedCollaborator);
 
 		return [
 			renderRajoutSectionHtml('Rajout simple', simpleRows, 'simple', abbrev),
-			renderRajoutSectionHtml('Nouveau collaborateur', newCollaboratorRows, 'new', abbrev),
-			renderRajoutSectionHtml('Autres rajouts', otherRows, 'other', abbrev),
+			renderRajoutSectionHtml('Rajout comme nouveau collaborateur', newCollaboratorRows, 'new', abbrev),
 		].filter(Boolean).join('');
 }
 
@@ -1149,7 +1145,7 @@ function toggleCollaboratorDay(dayKey) {
 }
 
 function setDefaultCollaboratorDays() {
-	setCollaboratorDays(DAY_OPTIONS.map((day) => day.key));
+	setCollaboratorDays([]);
 }
 
 function toggleRajoutDay(dayKey) {
