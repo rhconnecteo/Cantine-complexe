@@ -94,6 +94,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 	applySidebarCollapsedState(state.sidebarCollapsed);
 
+	// Restore UI state from previous session (search matricule, selected days)
+	loadUiState();
+
 		// Page-aware initialisation: only run features present on the current page
 		if (elements.rajoutDate) {
 			setDefaultRajoutDate();
@@ -340,7 +343,7 @@ function isDayVisibleForMode(dayPeriod, mode) {
 }
 
 function isDayReady(dayData) {
-	return Boolean(String(dayData?.planning || '').trim()) && Boolean(String(dayData?.choice || '').trim());
+	return hasMeaningfulPlanning(dayData?.planning) && Boolean(String(dayData?.choice || '').trim());
 }
 
 function isDayChecked(dayData) {
@@ -368,6 +371,25 @@ function isMissingPlaceholder(value, placeholders) {
 	return !normalized || placeholders.includes(normalized);
 }
 
+function isNonHourPlanningLabel(value) {
+	const normalized = String(value || '').trim();
+	const normalizedLower = normalized.toLowerCase();
+	if (!normalized || normalizedLower === 'time' || normalizedLower === 'off') {
+		return true;
+	}
+	if (/[a-zà-ÿ]/i.test(normalized) && !isHourPlanningValue(normalized)) {
+		return true;
+	}
+	return false;
+}
+
+function hasMeaningfulPlanning(value) {
+	const normalized = String(value || '').trim();
+	if (!normalized) return false;
+	if (isNonHourPlanningLabel(normalized)) return false;
+	return !isMissingPlaceholder(normalized, ['pas de planning', 'aucun planning', 'planning']);
+}
+
 function isHourPlanningValue(value) {
 	const normalized = String(value || '').trim().toLowerCase();
 	if (!normalized) return false;
@@ -388,7 +410,7 @@ function getCollaboratorImageSrc(row) {
 
 function getFormulaireDisplayState(row, dayData, dayKey) {
 	const planningValue = String(dayData?.planning || '').trim();
-	const hasPlanning = !isMissingPlaceholder(planningValue, ['pas de planning', 'aucun planning', 'planning']);
+	const hasPlanning = hasMeaningfulPlanning(planningValue);
 	const isPlanningHour = isHourPlanningValue(planningValue);
 	const hasChoice = !isMissingPlaceholder(dayData?.choice, ['pas de choix', 'aucun choix', 'choix']);
 	const isAdded = isCollaboratorAdded(row);
@@ -470,6 +492,8 @@ function onFormulaireSearch(event) {
 	event.preventDefault();
 	const searchValue = String(elements.formulaireMatriculeInput && elements.formulaireMatriculeInput.value || '').trim();
 	state.formulaireSearchMatricule = normalizeText(searchValue);
+	// persist formulaire matricule
+	saveUiState();
 	if (!state.formulaireSearchMatricule) {
 		showFormulaireIdleState();
 		return;
@@ -747,16 +771,16 @@ function renderRajoutSectionHtml(sectionTitle, rows, sectionKey, abbrev) {
 	const rowsHtml = rows
 		.map((row) => {
 			const cells = days.map((d) => (row.rajouts && row.rajouts[d] ? '<td class="rajout-x">X</td>' : '<td></td>')).join('');
-			const badgeLabel = 'Collab';
+			const badgeLabel = 'Collaborateur';
 			return `
 				<article class="result-card">
-					<div class="rajout-card-row" style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:6px;width:100%;min-width:0;">
-						<div class="rajout-card-info" style="display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-width:0;max-width:120px;flex:0 0 120px;">
+					<div class="rajout-card-row" style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-width:0;">
+						<div class="rajout-card-info" style="display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-width:0;max-width:180px;flex:0 0 180px;overflow:hidden;">
 							<div class="rajout-type-badge is-collaborator-column" style="background:linear-gradient(135deg,#102a43,#1d4e89);color:#fff;border:1px solid rgba(16,42,67,0.2);box-shadow:0 8px 18px rgba(16,42,67,0.14);">${escapeHtml(badgeLabel)}</div>
 							<div class="rajout-card-name">${escapeHtml(row.nomPrenom)}</div>
 							<div class="rajout-card-meta">${escapeHtml(row.matricule)}</div>
 						</div>
-						<div class="rajout-card-table" style="flex:1 1 auto;min-width:0;margin-left:0;white-space:nowrap;overflow:hidden;max-width:100%;">
+						<div class="rajout-card-table" style="flex:1 1 0;min-width:0;margin-left:0;white-space:nowrap;overflow:hidden;max-width:100%;">
 							<table class="rajout-table" style="border-collapse:collapse;white-space:nowrap;width:100%;table-layout:fixed;">
 								<thead>
 									<tr>
@@ -855,6 +879,9 @@ function setRajoutMatricule(matricule) {
 			? state.currentSearchMatricule.toUpperCase()
 			: 'Aucun matricule sélectionné';
 	}
+
+	// persist current matricule search
+	saveUiState();
 }
 
 async function loadData() {
@@ -1129,6 +1156,9 @@ function setRajoutDays(dayKeys) {
 		const isSelected = state.selectedRajoutDays.includes(button.getAttribute('data-day'));
 		button.classList.toggle('is-selected', isSelected);
 	});
+
+	// persist rajout days
+	saveUiState();
 }
 
 function setCollaboratorDays(dayKeys) {
@@ -1140,8 +1170,44 @@ function setCollaboratorDays(dayKeys) {
 		const isSelected = state.selectedCollaboratorDays.includes(button.getAttribute('data-day'));
 		button.classList.toggle('is-selected', isSelected);
 	});
+
+	// persist collaborator days
+	saveUiState();
 }
 
+// Persist simple UI state so searches and selections survive a page reload
+function saveUiState() {
+	try {
+		window.localStorage.setItem('cantine.lastSearchMatricule', String(state.currentSearchMatricule || ''));
+		window.localStorage.setItem('cantine.rajoutDays', JSON.stringify(Array.isArray(state.selectedRajoutDays) ? state.selectedRajoutDays : []));
+		window.localStorage.setItem('cantine.collaboratorDays', JSON.stringify(Array.isArray(state.selectedCollaboratorDays) ? state.selectedCollaboratorDays : []));
+		window.localStorage.setItem('cantine.formulaireMatricule', String(state.formulaireSearchMatricule || ''));
+	} catch (e) {
+		// ignore storage failures
+	}
+}
+
+function loadUiState() {
+	try {
+		const last = window.localStorage.getItem('cantine.lastSearchMatricule') || '';
+		if (last && elements.matriculeInput) {
+			elements.matriculeInput.value = last;
+			state.currentSearchMatricule = last;
+			// Do not automatically run the search here; let loadData/runCurrentSearch handle it after data is fetched
+		}
+		const rajoutDays = JSON.parse(window.localStorage.getItem('cantine.rajoutDays') || '[]');
+		if (Array.isArray(rajoutDays) && rajoutDays.length) setRajoutDays(rajoutDays);
+		const collDays = JSON.parse(window.localStorage.getItem('cantine.collaboratorDays') || '[]');
+		if (Array.isArray(collDays) && collDays.length) setCollaboratorDays(collDays);
+		const f = window.localStorage.getItem('cantine.formulaireMatricule') || '';
+		if (f && elements.formulaireMatriculeInput) {
+			elements.formulaireMatriculeInput.value = f;
+			state.formulaireSearchMatricule = f;
+		}
+	} catch (e) {
+		// ignore
+	}
+}
 function toggleCollaboratorDay(dayKey) {
 	if (!dayKey) return;
 	const current = Array.isArray(state.selectedCollaboratorDays) ? [...state.selectedCollaboratorDays] : [];
@@ -1242,7 +1308,7 @@ function computeSummary(rows) {
 	let newCollaboratorCount = 0;
 
 	rows.forEach((row) => {
-		const hasPlanning = DAY_OPTIONS.some((day) => String(row.days?.[day.key]?.planning || '').trim() !== '');
+		const hasPlanning = DAY_OPTIONS.some((day) => hasMeaningfulPlanning(row.days?.[day.key]?.planning));
 		const hasChoice = DAY_OPTIONS.some((day) => String(row.days?.[day.key]?.choice || '').trim() !== '');
 		const isSimpleRajout = Boolean(row.isSimpleRajout) || normalizeText(row.simpleRajout) === 'x';
 		const isNewCollaborator = Boolean(row.isAddedCollaborator) || normalizeText(row.newCollaborator) === 'x';
@@ -1296,7 +1362,7 @@ function renderResults(rows, emptyMessage, isEmpty, mode, targetElement) {
 			const allVisibleReady = dayItems.length > 0 && dayItems.every((day) => isDayReady(row.days?.[day.key]));
 			const checkedCount = dayItems.filter((day) => isDayChecked(row.days?.[day.key])).length;
 			const stateClass = allVisibleReady ? 'is-ok' : 'is-alert';
-			const stateLabel = rowHasRajout ? 'Rajouté' : (allVisibleReady ? 'Dossier pret' : 'Dossier incomplet');
+			const stateLabel = rowHasRajout ? 'Rajouté' : (allVisibleReady ? '-' : '-');
 			return `
 				<article class="result-card result-card--search ${stateClass}">
 					<div class="result-topline result-side">
@@ -1321,9 +1387,9 @@ function renderResults(rows, emptyMessage, isEmpty, mode, targetElement) {
 								<div class="week-column ${dayIsRajout ? 'is-rajout' : (ready ? 'is-ready' : 'is-missing')} ${checked ? 'is-checked' : ''}">
 									<h4>${escapeHtml(isCompact ? (abbrev[day.key] || day.label) : day.label)}</h4>
 									${renderWeekdayCell('Planning', dayData.planning, 'Pas de planning')}
-									${renderWeekdayCell('Période', dayData.period, 'Jour / Nuit')}
+									${renderWeekdayCell('Shift', dayData.period, 'Jour / Nuit')}
 									${renderWeekdayCell('Choix', dayData.choice, 'Pas de choix')}
-									<div class="day-status ${(dayIsRajout ? 'is-rajout' : (ready ? 'is-ready' : 'is-missing'))} ${checked ? 'is-checked' : ''}">${checked ? 'Repas pris' : (dayIsRajout ? 'Rajouté' : (ready ? 'Compatible' : 'Incomplet'))}</div>
+									<div class="day-status ${(dayIsRajout ? 'is-rajout' : (ready ? 'is-ready' : 'is-missing'))} ${checked ? 'is-checked' : ''}">${checked ? 'Repas pris' : (dayIsRajout ? 'Rajouté' : (ready ? 'choix complet' : 'Incomplet'))}</div>
 								</div>
 							`;
 						}).join('')}
@@ -1401,12 +1467,12 @@ function renderFormulaireResults(rows, emptyMessage, isEmpty, dayKey) {
 									<strong>${escapeHtml(row.matricule)}</strong>
 								</div>
 								<div class="formulaire-result-item">
-									<span>Période :</span>
+									<span>Shift :</span>
 									<strong>${escapeHtml(dayData.period || 'Jour / Nuit')}</strong>
 								</div>
 								<div class="formulaire-result-item">
 									<span>Planning :</span>
-									<strong>${escapeHtml(dayData.planning || 'Pas de planning')}</strong>
+									<strong>${escapeHtml(isNonHourPlanningLabel(dayData.planning) ? 'Pas de planning' : (String(dayData.planning || '').trim() || 'Pas de planning'))}</strong>
 								</div>
 								<div class="formulaire-result-item">
 									<span>Choix :</span>
@@ -1450,12 +1516,14 @@ function resetFormulaireSearch() {
 	if (elements.formulaireMatriculeInput) {
 		elements.formulaireMatriculeInput.value = '';
 	}
+	// clear persisted formulaire matricule
+	try { window.localStorage.removeItem('cantine.formulaireMatricule'); } catch (e) {}
 	showFormulaireIdleState();
 }
 
 function renderMealAction(row, dayKey, dayData, isChecked) {
 	const addedCollaborator = isCollaboratorAdded(row);
-	const hasPlanning = Boolean(dayData && String(dayData.planning || '').trim());
+	const hasPlanning = Boolean(dayData && hasMeaningfulPlanning(dayData.planning));
 	const hasChoice = Boolean(dayData && String(dayData.choice || '').trim());
 	if (!hasPlanning && !hasChoice && !addedCollaborator) {
 		return '<div class="day-action day-action--blocked">Planning ou choix manquant</div>';
@@ -1525,6 +1593,11 @@ function resetSearch() {
 	elements.matriculeInput.value = '';
 	setRajoutMatricule('');
 	setRajoutDays([]);
+	// clear persisted search state
+	try {
+		window.localStorage.removeItem('cantine.lastSearchMatricule');
+		window.localStorage.removeItem('cantine.rajoutDays');
+	} catch (e) {}
 	showIdleState();
 	elements.resultsHint.textContent = 'Aucun filtre applique.';
 	if (elements.searchResults) {
