@@ -1935,6 +1935,10 @@ tbody tr:nth-child(even) td {
 								<span class="sidebar-button-icon" aria-hidden="true">➕</span>
 								<span class="sidebar-button-label">Rajouts</span>
 							</button>
+							<button id="navExportButton" class="sidebar-button" type="button" aria-label="Exporter">
+								<span class="sidebar-button-icon" aria-hidden="true">💾</span>
+								<span class="sidebar-button-label">Exporter</span>
+							</button>
 						</div>
 						<div class="sidebar-metric">
 							<span>Total</span>
@@ -2092,10 +2096,39 @@ tbody tr:nth-child(even) td {
 						<div id="rajoutStatus" style="margin-top:8px;color:var(--muted)"></div>
 						<div id="rajoutList" class="results-list rajout-list-only" style="margin-top:12px"></div>
 					</section>
+
+					<section id="page-export" class="panel app-card page-section">
+						<div class="panel-header">
+							<div>
+								<h2>Exporter les données</h2>
+								<p>Choisissez un jour de la semaine pour exporter les données correspondantes.</p>
+							</div>
+						</div>
+						<form id="exportForm" class="search-grid">
+							<div class="field">
+								<span>Jour</span>
+								<select id="exportDay">
+									<option value="all">Tous les jours</option>
+									<option value="lundi">Lundi</option>
+									<option value="mardi">Mardi</option>
+									<option value="mercredi">Mercredi</option>
+									<option value="jeudi">Jeudi</option>
+									<option value="vendredi">Vendredi</option>
+									<option value="samedi">Samedi</option>
+									<option value="dimanche">Dimanche</option>
+								</select>
+							</div>
+							<div class="actions">
+								<button id="exportButton" type="button" class="primary-button">Télécharger XLSX</button>
+							</div>
+						</form>
+						<div id="exportStatus" style="margin-top:8px;color:var(--muted)"></div>
+					</section>
 				</main>
 			</div>
 		</div>
 
+		<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 		<script src="./app.js"></script>
 	</body>
 </html>

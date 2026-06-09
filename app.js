@@ -83,10 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
 	elements.navFormulaireButton = document.getElementById('navFormulaireButton');
 	elements.navRechercheButton = document.getElementById('navRechercheButton');
 	elements.navRajoutButton = document.getElementById('navRajoutButton');
+	elements.navExportButton = document.getElementById('navExportButton');
 	elements.sidebarToggleButton = document.getElementById('sidebarToggleButton');
 	elements.sidebar = document.querySelector('.sidebar');
 	elements.sidebarContent = document.querySelector('.sidebar-content');
 	elements.rajoutList = document.getElementById('rajoutList');
+	elements.exportDay = document.getElementById('exportDay');
+	elements.exportButton = document.getElementById('exportButton');
+	elements.exportStatus = document.getElementById('exportStatus');
 
 	state.sidebarCollapsed = readSidebarCollapsedState();
 	if (isMobileViewport()) {
@@ -96,6 +100,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Restore UI state from previous session (search matricule, selected days)
 	loadUiState();
+	if (elements.exportDay && !elements.exportDay.value) {
+		elements.exportDay.value = getTodayDayKey();
+	}
 
 		// Page-aware initialisation: only run features present on the current page
 		if (elements.rajoutDate) {
@@ -209,13 +216,15 @@ function bindEvents() {
 	bindNavButton(elements.navRechercheButton, 'page-recherche');
 	bindNavButton(elements.navRajoutButton, 'page-rajout');
 
-	if (elements.navRajoutButton) {
-		elements.navRajoutButton.addEventListener('click', (ev) => {
-			ev.preventDefault();
-			showSection('page-rajout');
-			setActiveNav(elements.navRajoutButton);
-			renderRajoutList();
+	if (elements.navExportButton) {
+		elements.navExportButton.addEventListener('click', () => {
+			showSection('page-export');
+			setActiveNav(elements.navExportButton);
 		});
+	}
+
+	if (elements.exportButton) {
+		elements.exportButton.addEventListener('click', onExportClick);
 	}
 
 	if (elements.matriculeInput) {
@@ -283,7 +292,7 @@ function isMobileViewport() {
 }
 
 function showSection(pageId) {
-	const pages = ['page-formulaire', 'page-recherche', 'page-rajout'];
+	const pages = ['page-formulaire', 'page-recherche', 'page-rajout', 'page-export'];
 	pages.forEach((id) => {
 		const el = document.getElementById(id);
 		if (!el) return;
@@ -299,6 +308,12 @@ function showSection(pageId) {
 		setHeroSlideshowPlaying(false);
 		renderRajoutList();
 		adjustSidebarRajoutVisibility('page-rajout');
+	} else if (pageId === 'page-export') {
+		document.body.classList.remove('page-rajout-active');
+		adjustRajoutSectionVisibility('page-export');
+		positionRajoutForm('page-export');
+		setHeroSlideshowPlaying(false);
+		adjustSidebarRajoutVisibility('page-export');
 	} else if (pageId === 'page-recherche') {
 		document.body.classList.remove('page-rajout-active');
 		adjustRajoutSectionVisibility('page-recherche');
@@ -351,7 +366,7 @@ function isDayChecked(dayData) {
 }
 
 function setDayCheckedOptimistic(matricule, dayKey, checked) {
-	const targetRow = (state.rows || []).find((row) => normalizeText(row.matricule) === normalizeText(matricule));
+	const targetRow = (state.rows || []).find((row) => normalizeText(row.matricule).includes(normalizeText(matricule)));
 	if (!targetRow || !targetRow.days || !targetRow.days[dayKey]) {
 		return null;
 	}
@@ -466,7 +481,7 @@ function runCurrentSearch() {
 		return;
 	}
 
-	const matches = state.rows.filter((row) => normalizeText(row.matricule) === matricule);
+	const matches = state.rows.filter((row) => normalizeText(row.matricule).includes(matricule) || normalizeText(row.nomPrenom).includes(matricule));
 	state.lastResults = matches;
 	setRajoutMatricule(matricule);
 
@@ -1359,7 +1374,11 @@ function renderResults(rows, emptyMessage, isEmpty, mode, targetElement) {
 			const rajoutDays = Object.keys(row.rajouts || {});
 			const dayItems = DAY_OPTIONS;
 			const rowHasRajout = isCollaboratorAdded(row) || Object.values(row.days || {}).some((day) => String(day?.rajout || '').trim());
-			const allVisibleReady = dayItems.length > 0 && dayItems.every((day) => isDayReady(row.days?.[day.key]));
+			const allVisibleReady = dayItems.length > 0 && dayItems.every((day) => {
+				const dayData = row.days?.[day.key] || {};
+				const dayIsRajout = Boolean(String(dayData?.rajout || '').trim()) || rajoutDays.includes(day.key);
+				return isDayReady(dayData) || dayIsRajout;
+			});
 			const checkedCount = dayItems.filter((day) => isDayChecked(row.days?.[day.key])).length;
 			const stateClass = allVisibleReady ? 'is-ok' : 'is-alert';
 			const stateLabel = rowHasRajout ? 'Rajouté' : (allVisibleReady ? '-' : '-');
@@ -1502,7 +1521,7 @@ function renderCurrentFormulaireSearch() {
 		return;
 	}
 
-	const matches = state.rows.filter((row) => normalizeText(row.matricule) === normalizeText(matricule));
+	const matches = state.rows.filter((row) => normalizeText(row.matricule).includes(normalizeText(matricule)) || normalizeText(row.nomPrenom).includes(normalizeText(matricule)));
 	if (!matches.length) {
 		renderFormulaireResults([], `Aucun resultat pour "${escapeHtml(matricule)}".`, true, getTodayDayKey());
 		return;
@@ -1639,4 +1658,84 @@ function escapeHtml(value) {
 		.replace(/>/g, '&gt;')
 		.replace(/"/g, '&quot;')
 		.replace(/'/g, '&#39;');
+}
+
+function onExportClick() {
+	const selectedDay = elements.exportDay ? elements.exportDay.value : 'all';
+	const exportAll = selectedDay === 'all';
+
+	if (!selectedDay) {
+		if (elements.exportStatus) {
+			elements.exportStatus.textContent = 'Sélectionnez un jour pour l’export.';
+		}
+		return;
+	}
+
+	try {
+		if (typeof window.XLSX === 'undefined') {
+			throw new Error('La bibliothèque XLSX n’est pas chargée. Vérifiez la source du script.');
+		}
+		const data = generateExportData(selectedDay);
+		const suffix = exportAll ? 'toutes-donnees' : selectedDay;
+		const fileName = `cantine-export-${suffix}.xlsx`;
+		exportToXLSX(data, fileName);
+		if (elements.exportStatus) {
+			elements.exportStatus.textContent = 'Fichier exporté avec succès.';
+		}
+	} catch (error) {
+		if (elements.exportStatus) {
+			elements.exportStatus.textContent = `Erreur lors de l'export: ${error.message}`;
+		}
+	}
+}
+
+function generateExportData(selectedDay) {
+	const rows = [['Matricule', 'Nom et prénom', 'Choix', 'Checking']];
+	
+	if (!Array.isArray(state.rows)) {
+		return rows;
+	}
+
+	state.rows.forEach((row) => {
+		DAY_OPTIONS.forEach((dayOption) => {
+			if (selectedDay !== 'all' && dayOption.key !== selectedDay) {
+				return;
+			}
+
+			const dayData = row.days?.[dayOption.key] || {};
+			const rawRajout = String(dayData.rajout || '').trim();
+			const isRajout = rawRajout !== '';
+			const choice = isRajout ? 'rajout' : String(dayData.choice || '').trim();
+			const checking = normalizeText(dayData.checking) === 'x' ? 'ok' : 'no';
+
+			rows.push([
+				escapeHtml(row.matricule),
+				escapeHtml(row.nomPrenom),
+				escapeHtml(choice),
+				escapeHtml(checking)
+			]);
+		});
+	});
+
+	return rows;
+}
+
+function getDayIndexForWeek(dayKey) {
+	const dayMap = {
+		dimanche: 0,
+		lundi: 1,
+		mardi: 2,
+		mercredi: 3,
+		jeudi: 4,
+		vendredi: 5,
+		samedi: 6
+	};
+	return dayMap[dayKey] || 0;
+}
+
+function exportToXLSX(data, filename) {
+	const ws = XLSX.utils.aoa_to_sheet(data);
+	const wb = XLSX.utils.book_new();
+	XLSX.utils.book_append_sheet(wb, ws, 'Données');
+	XLSX.writeFile(wb, filename);
 }
