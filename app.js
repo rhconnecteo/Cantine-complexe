@@ -358,7 +358,10 @@ function isDayVisibleForMode(dayPeriod, mode) {
 }
 
 function isDayReady(dayData) {
-	return hasMeaningfulPlanning(dayData?.planning) && Boolean(String(dayData?.choice || '').trim());
+	// Treat certain placeholder values (including 'absent') as "no choice" so
+	// the day is not considered ready when the choice is a placeholder.
+	const hasChoice = !isMissingPlaceholder(dayData?.choice, ['pas de choix', 'aucun choix', 'choix', 'absent']);
+	return hasMeaningfulPlanning(dayData?.planning) && Boolean(hasChoice);
 }
 
 function isDayChecked(dayData) {
@@ -427,7 +430,8 @@ function getFormulaireDisplayState(row, dayData, dayKey) {
 	const planningValue = String(dayData?.planning || '').trim();
 	const hasPlanning = hasMeaningfulPlanning(planningValue);
 	const isPlanningHour = isHourPlanningValue(planningValue);
-	const hasChoice = !isMissingPlaceholder(dayData?.choice, ['pas de choix', 'aucun choix', 'choix']);
+	// Treat 'absent' like the existing placeholders so it behaves like "pas de choix"
+	const hasChoice = !isMissingPlaceholder(dayData?.choice, ['pas de choix', 'aucun choix', 'choix', 'absent']);
 	const isAdded = isCollaboratorAdded(row);
 	const isRajoutDay = Boolean(String(dayData?.rajout || '').trim()) || Boolean(row && row.rajouts && row.rajouts[String(dayKey || '')]);
 	const isRajout = isAdded || isRajoutDay;
