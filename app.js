@@ -811,7 +811,14 @@ function renderResults(rows, emptyMessage, isEmpty, mode, targetElement) {
 	container.innerHTML = rows.map(row => {
 		const rajoutDays = Object.keys(row.rajouts || {});
 		const checkedCount = DAY_OPTIONS.filter(day => isDayChecked(row.days?.[day.key])).length;
-		return `<article class="result-card result-card--search"><div class="result-topline"><div><h3>${escapeHtml(row.nomPrenom)}</h3><div><span class="result-badge">${escapeHtml(row.matricule)}</span>${checkedCount ? `<span class="result-state-pill is-checked">${checkedCount} repas pris</span>` : ''}</div></div></div><div class="week-grid">${DAY_OPTIONS.map(day => { const dayData = row.days?.[day.key] || {}; const ready = isDayReady(dayData); const checked = isDayChecked(dayData); const dayIsRajout = Boolean(dayData?.rajout?.trim()) || rajoutDays.includes(day.key); return `<div class="week-column ${dayIsRajout ? 'is-rajout' : (ready ? 'is-ready' : 'is-missing')} ${checked ? 'is-checked' : ''}"><h4>${escapeHtml(isCompact ? abbrev[day.key] : day.label)}</h4>${renderWeekdayCell('Planning', dayData.planning, '---')}${renderWeekdayCell('Shift', dayData.period, '---')}${renderWeekdayCell('Choix', dayData.choice, '---')}${renderOptionalWeekdayCell('Attribué', dayData.attribution)}<div class="day-status">${checked ? '✅ Pris' : (dayIsRajout ? '📋 Rajouté' : (ready ? '✅' : '❌'))}</div></div>`; }).join('')}</div></article>`;
+		return `<article class="result-card result-card--search"><div class="result-topline"><div><h3>${escapeHtml(row.nomPrenom)}</h3><div><span class="result-badge">${escapeHtml(row.matricule)}</span>${checkedCount ? `<span class="result-state-pill is-checked">${checkedCount} repas pris</span>` : ''}</div></div></div><div class="week-grid">${DAY_OPTIONS.map(day => {
+			const dayData = row.days?.[day.key] || {};
+			const ready = isDayReady(dayData);
+			const checked = isDayChecked(dayData);
+			const dayIsRajout = Boolean(dayData?.rajout?.trim()) || rajoutDays.includes(day.key);
+			const statusText = checked ? 'Repas pris' : dayIsRajout ? 'Rajouté' : ready ? 'Prêt' : 'Manquant';
+			return `<div class="week-column ${dayIsRajout ? 'is-rajout' : (ready ? 'is-ready' : 'is-missing')} ${checked ? 'is-checked' : ''}"><div class="day-badge ${checked ? 'is-checked' : (dayIsRajout ? 'is-rajout' : (ready ? 'is-ready' : 'is-missing'))}">${escapeHtml(statusText)}</div><h4>${escapeHtml(isCompact ? abbrev[day.key] : day.label)}</h4>${renderWeekdayCell('Planning', dayData.planning, '---')}${renderWeekdayCell('Shift', dayData.period, '---')}${renderWeekdayCell('Choix', dayData.choice, '---')}${renderOptionalWeekdayCell('Attribué', dayData.attribution)}<div class="day-status ${checked ? 'is-checked' : (dayIsRajout ? 'is-rajout' : (ready ? 'is-ready' : 'is-missing'))}">${checked ? '✅ Pris' : (dayIsRajout ? '📋 Rajouté' : (ready ? '✅' : '❌'))}</div></div>`;
+		}).join('')}</div></article>`;
 	}).join('');
 }
 
