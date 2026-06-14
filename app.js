@@ -179,6 +179,15 @@ function scrollToSection(sectionId) {
 	if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// Petit utilitaire debounce pour éviter trop de rendus pendant la frappe
+function debounce(fn, wait) {
+	let t = null;
+	return function(...args) {
+		if (t) clearTimeout(t);
+		t = setTimeout(() => { fn.apply(this, args); }, wait || 200);
+	};
+}
+
 function adjustSidebarRajoutVisibility(pageId) {
 	const wrapper = document.getElementById('sidebarRajoutMetric');
 	if (!wrapper) return;
@@ -294,6 +303,17 @@ function bindEvents() {
 		elements.matriculeInput.addEventListener('input', () => {
 			if (!elements.matriculeInput.value.trim()) showIdleState();
 		});
+	}
+
+	// Recherche en direct dans la fiche "Formulaire" (sans cliquer sur Rechercher)
+	if (elements.formulaireMatriculeInput) {
+		elements.formulaireMatriculeInput.addEventListener('input', debounce(() => {
+			const v = String(elements.formulaireMatriculeInput.value || '').trim();
+			state.formulaireSearchMatricule = normalizeText(v);
+			saveUiState();
+			if (!state.formulaireSearchMatricule) showFormulaireIdleState();
+			else renderCurrentFormulaireSearch();
+		}, 250));
 	}
 	
 	if (elements.sidebarToggleButton) {
