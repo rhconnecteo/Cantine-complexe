@@ -309,13 +309,13 @@
 					<div class="field">
 						<span>⏰ Plage horaire</span>
 						<select id="statsTimeRangeFilter">
-							<option value="all">Toutes</option>
-							<option value="10-11">10:00 - 11:00</option>
-							<option value="11-12">11:00 - 12:00</option>
-							<option value="12-13">12:00 - 13:00</option>
-							<option value="13-14">13:00 - 14:00</option>
-							<option value="14-15">14:00 - 15:00</option>
-							<option value="15+">15:00 et plus</option>
+							<option value="all">Toutes les heures</option>
+							<option value="6-9">06:00 - 09:00 (Matin)</option>
+							<option value="9-11">09:00 - 11:00 (Fin matinée)</option>
+							<option value="11-13">11:00 - 13:00 (Déjeuner)</option>
+							<option value="13-15">13:00 - 15:00 (Après-midi)</option>
+							<option value="15-18">15:00 - 18:00 (Fin journée)</option>
+							<option value="18-22">18:00 - 22:00 (Soir)</option>
 						</select>
 					</div>
 					<button id="refreshStatsButton" class="primary-button">🔄 Actualiser</button>
@@ -350,7 +350,6 @@
 						<h3>📊 Histogramme des repas pris par plage horaire</h3>
 						<div class="stats-chart-wrapper">
 							<canvas id="mealsHistogram" width="800" height="400" style="max-width:100%; height:100%;"></canvas>
-							<div id="histogramLegend" class="histogram-legend"></div>
 						</div>
 					</div>
 					<div class="stats-pie-card">
@@ -370,12 +369,12 @@
 					<div class="stat-card-small success">
 						<span class="stat-action-label">Rajouts</span>
 						<strong id="statsRajoutCount">0</strong>
-						<p class="stat-action-meta">Nombre de rajouts pour <span id="statsDayLabel">le jour sélectionné</span>.</p>
+						<p class="stat-action-meta">Nombre de rajouts pour le jour sélectionné.</p>
 					</div>
 					<div class="stat-card-small">
 						<span class="stat-action-label">Attributions</span>
 						<strong id="statsAttributionCount">0</strong>
-						<p class="stat-action-meta">Nombre d'attributions pour <span id="statsDayLabel2">le jour sélectionné</span>.</p>
+						<p class="stat-action-meta">Nombre d'attributions pour le jour sélectionné.</p>
 						</div>
 					</div>
 				</div>
