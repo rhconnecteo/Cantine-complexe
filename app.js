@@ -73,13 +73,13 @@ let statsChart = null;
 let pieChart = null;
 
 const TIME_RANGES = {
-	'6-9': { label: '06:00 - 09:00', min: 6, max: 9, color: '#10b981' },
-	'9-11': { label: '09:00 - 11:00', min: 9, max: 11, color: '#34d399' },
-	'11-13': { label: '11:00 - 13:00', min: 11, max: 13, color: '#f59e0b' },
-	'13-15': { label: '13:00 - 15:00', min: 13, max: 15, color: '#fbbf24' },
-	'15-18': { label: '15:00 - 18:00', min: 15, max: 18, color: '#6b7280' },
-	'18-22': { label: '18:00 - 22:00', min: 18, max: 22, color: '#4b5563' },
-	'all': { label: 'Toutes', min: 0, max: 24, color: '#1f7a5a' }
+	'10-11': { label: '10:00 - 11:00', min: 10, max: 11, color: '#10b981' },
+	'11-12': { label: '11:00 - 12:00', min: 11, max: 12, color: '#34d399' },
+	'12-13': { label: '12:00 - 13:00', min: 12, max: 13, color: '#f59e0b' },
+	'13-14': { label: '13:00 - 14:00', min: 13, max: 14, color: '#fbbf24' },
+	'14-15': { label: '14:00 - 15:00', min: 14, max: 15, color: '#f97316' },
+	'15+':   { label: '15:00 et plus',   min: 15, max: 24, color: '#6b7280' },
+	'all':   { label: 'Toutes', min: 0, max: 24, color: '#1f7a5a' }
 };
 
 // ==================== INITIALISATION ====================
@@ -246,7 +246,6 @@ function setAttributionSubmittingState(isSubmitting) {
 function bindEvents() {
 	if (elements.searchForm) elements.searchForm.addEventListener('submit', onSearch);
 	if (elements.formulaireSearchForm) elements.formulaireSearchForm.addEventListener('submit', onFormulaireSearch);
-	if (elements.formulaireMatriculeInput) elements.formulaireMatriculeInput.addEventListener('input', onFormulaireInput);
 	if (elements.collaboratorForm) elements.collaboratorForm.addEventListener('submit', onCollaboratorSubmit);
 	if (elements.resetButton) elements.resetButton.addEventListener('click', resetSearch);
 	if (elements.formulaireResetButton) elements.formulaireResetButton.addEventListener('click', resetFormulaireSearch);
@@ -336,6 +335,13 @@ function isMobileViewport() { return window.matchMedia && window.matchMedia('(ma
 // ==================== NAVIGATION ====================
 function showSection(pageId) {
 	const pages = ['page-formulaire', 'page-recherche', 'page-rajout', 'page-export', 'page-stats'];
+	// remove any existing page-*-active body classes and add the current one
+	try {
+		document.body.classList.forEach(cls => {
+			if (/^page-.*-active$/.test(cls)) document.body.classList.remove(cls);
+		});
+	} catch (e) {}
+	document.body.classList.add(`${pageId}-active`);
 	pages.forEach((id) => {
 		const el = document.getElementById(id);
 		if (el) {
@@ -550,24 +556,10 @@ function onSearch(event) { event.preventDefault(); runCurrentSearch(); }
 
 function onFormulaireSearch(event) {
 	event.preventDefault();
-	runFormulaireSearch();
-}
-
-function onFormulaireInput() {
 	const searchValue = String(elements.formulaireMatriculeInput && elements.formulaireMatriculeInput.value || '').trim();
 	state.formulaireSearchMatricule = normalizeText(searchValue);
 	saveUiState();
-	if (state.formulaireSearchTimer) clearTimeout(state.formulaireSearchTimer);
-	state.formulaireSearchTimer = setTimeout(() => {
-		runFormulaireSearch();
-	}, 250);
-}
-
-function runFormulaireSearch() {
-	if (!state.formulaireSearchMatricule) {
-		showFormulaireIdleState();
-		return;
-	}
+	if (!state.formulaireSearchMatricule) { showFormulaireIdleState(); return; }
 	renderCurrentFormulaireSearch();
 	scrollToSection('topSection');
 }
@@ -1100,12 +1092,13 @@ function extractHour(timeStr) {
 
 function getTimeRange(hour) {
 	if (hour === null) return 'all';
-	if (hour >= 6 && hour < 9) return '6-9';
-	if (hour >= 9 && hour < 11) return '9-11';
-	if (hour >= 11 && hour < 13) return '11-13';
-	if (hour >= 13 && hour < 15) return '13-15';
-	if (hour >= 15 && hour < 18) return '15-18';
-	if (hour >= 18 && hour < 22) return '18-22';
+	// Map hours into the new 1-hour buckets requested by the user
+	if (hour >= 10 && hour < 11) return '10-11';
+	if (hour >= 11 && hour < 12) return '11-12';
+	if (hour >= 12 && hour < 13) return '12-13';
+	if (hour >= 13 && hour < 14) return '13-14';
+	if (hour >= 14 && hour < 15) return '14-15';
+	if (hour >= 15) return '15+';
 	return 'all';
 }
 
@@ -1165,7 +1158,7 @@ function renderHistogram(rangeCounts, totalTaken, selectedRange) {
 	let rangesToShow = [];
 	
 	if (selectedRange === 'all') {
-		rangesToShow = ['6-9', '9-11', '11-13', '13-15', '15-18', '18-22'];
+		rangesToShow = ['10-11', '11-12', '12-13', '13-14', '14-15', '15+'];
 	} else {
 		rangesToShow = [selectedRange];
 	}
@@ -1198,7 +1191,7 @@ function renderHistogram(rangeCounts, totalTaken, selectedRange) {
 				label: 'Nombre de repas pris',
 				data: data,
 				backgroundColor: backgroundColors,
-				borderColor: 'rgba(31, 122, 90, 1)',
+				borderColor: backgroundColors,
 				borderWidth: 1,
 				borderRadius: 8,
 				barPercentage: 0.6,
@@ -1209,7 +1202,7 @@ function renderHistogram(rangeCounts, totalTaken, selectedRange) {
 			responsive: true,
 			maintainAspectRatio: false,
 			plugins: {
-				legend: { position: 'top', labels: { font: { family: 'Plus Jakarta Sans', size: 12 } } },
+				legend: { display: false },
 				tooltip: { callbacks: { label: function(context) { return `🍽️ ${context.raw} repas`; } } }
 			},
 			scales: {
@@ -1219,6 +1212,18 @@ function renderHistogram(rangeCounts, totalTaken, selectedRange) {
 			animation: { duration: 500, easing: 'easeOutQuart' }
 		}
 	});
+
+	// Build a small custom legend matching each bar color and label
+	try {
+		const legendContainer = document.getElementById('histogramLegend');
+		if (legendContainer) {
+			legendContainer.innerHTML = labels.map((lbl, i) => {
+				const count = data[i] || 0;
+				const color = backgroundColors[i] || '#ccc';
+				return `<div class="histogram-legend-item"><span class="histogram-legend-color" style="background:${color}"></span><span class="histogram-legend-text">${lbl}</span><span class="histogram-legend-value">${count} repas</span></div>`;
+			}).join('');
+		}
+	} catch (e) {}
 }
 
 function renderPieChart(taken, notTaken) {
@@ -1293,6 +1298,15 @@ function updateStatistics() {
 	
 	renderHistogram(filteredRangeCounts, stats.taken, selectedRange);
 	renderPieChart(stats.taken, stats.notTaken);
+
+	// Update human-readable day labels in the summary cards
+	try {
+		const dayLabel = getDayLabel(selectedDay || getTodayDayKey());
+		const lblEl = document.getElementById('statsDayLabel');
+		const lblEl2 = document.getElementById('statsDayLabel2');
+		if (lblEl) lblEl.textContent = dayLabel;
+		if (lblEl2) lblEl2.textContent = dayLabel;
+	} catch (e) {}
 }
 
 // ==================== EXPORT ====================
